@@ -1,0 +1,9 @@
+*.pyc
+*.DS_Store
+main.py
+ComE/*
+EEC/*
+DeltaCon/*
+DynGEM/*
+SACPD/*
+
