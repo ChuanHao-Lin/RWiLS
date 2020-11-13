@@ -22,11 +22,10 @@ from DeepWalk.embedding import DeepWalk
 window_size = 10
 dim = 32
 
+epoch = 200
+
 a = 100 # aggregation lower bound
 b = 1000 # aggregation upper bound
-
-# True for parameter change. False for structure change
-change_type = True
 
 pairwise_transition = inner_transition # distance_transition inner_transition
 estimate_method = "fixedpoint" # meanprecision fixedpoint
@@ -42,17 +41,23 @@ degree = 10.
 
 ########## PROBLEM SETTING ##########
 
-change_period = 1
-
-start_deg = 10.
-end_deg = 10.01
-start_block_size = 4
-end_block_size = 5
+# True for parameter change. False for structure change
+change_type = True
 
 start_period = 20
 end_period = 20
+
+# gradual change (for both parameter change and structure change)
+change_period = 1
 pause_period = 1
-epoch = 200
+
+# parameter change
+start_deg = 10.
+end_deg = 10.01
+
+# structure change
+start_block_size = 4
+end_block_size = 5
 
 
 ########## PARAMETER CHANGE ##########
