@@ -122,6 +122,10 @@ def normalize_score(scores):
     return scores
 
 
+def MDL_threshold(window_size, dim, significant=0.05):
+    return 1 / significant + dim / 2 * np.log(window_size)
+
+
 # Evaluation method. Implemented according to SMDL paper
 def auc_benefit_fan(scores, change_points, tolerate=100, threshold_step=0.0001):
     change_points = np.array(change_points)
