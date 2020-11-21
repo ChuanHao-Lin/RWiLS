@@ -54,6 +54,20 @@ class sliding_window(object):
             return False
 
     def insert_new_data(self, g):
+        if len(self.window) < self.window_size:
+            return self.fill(g)
+            
+        while len(self.window) >= self.window_size:
+            self.window = np.delete(self.window, 0, axis=0)
+        self.window = np.vstack((self.window, self.preprocess(g)))
+ 
+        self.calculate_scores()
+        return True
+
+    # This function is similar to insert_new_data
+    # It returns the window, and does not calculate scores
+    # Aggregation model needs this function in 2-layer structure
+    def insert_window(self, g):
         while len(self.window) >= self.window_size:
             self.window = np.delete(self.window, 0, axis=0)
         self.window = np.vstack((self.window, self.preprocess(g)))

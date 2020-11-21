@@ -199,6 +199,14 @@ def SNML(adj, tran):
         return np.where(np.logical_and(tran > 0, tran < 1), -np.log(adj * tran + (1 - adj) * (1 - tran)), 0)
 
 
+def SNML_ground_truth(v_node, p_mat):
+    v_node = np.array(v_node)
+    p_mat = np.array(p_mat)
+    code = -p_mat * np.log(p_mat) - (1 - p_mat) * np.log(1 - p_mat)
+    node_combination = np.dot(np.reshape(v_node, (-1, 1)), np.reshape(v_node, (1,-1))) - np.diag(v_node)
+    return 0.5 * np.sum(code * node_combination)
+
+
 def trigamma(x):
     return polygamma(1, x)
     

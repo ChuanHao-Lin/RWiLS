@@ -227,10 +227,10 @@ window_org = sliding_window(window_size, rw, estimate_method)
 
 agg_model = aggregate_model_evaluation(a, b, individual=True)
 
-agg_model.add_model(window_gae.insert_new_data)  # GAE:      1st idx=0
-agg_model.add_model(window_dw.insert_new_data)   # DeepWalk: 1st idx=1
-agg_model.add_evaluation(kl_score)               # KL:       2nd idx=0
-agg_model.add_evaluation(smdl_score)             # SMDL:     2nd idx=1
+agg_model.add_model(window_gae.insert_window)   # GAE:      1st idx=0
+agg_model.add_model(window_dw.insert_window)    # DeepWalk: 1st idx=1
+agg_model.add_evaluation(kl_score)              # KL:       2nd idx=0
+agg_model.add_evaluation(smdl_score)            # SMDL:     2nd idx=1
 
 
 ########## TRAIN GRAPH MODELS ##########
@@ -315,9 +315,9 @@ smdl_org = normalize_score(smdl_org)
 ########## RESULTS ##########
 
 print("RWiLS (AGG) AUC={}".format(evaluate(aggs, change_points, window_size)))
-print("RWiLS: GAE (KL) AUC={}".format(evaluate(kl_gae, change_points, window_size)))
-print("RWiLS: GAE (MDL) AUC={}".format(evaluate(smdl_gae, change_points, window_size)))
-print("RWiLS: DeepWalk (KL) AUC={}".format(evaluate(kl_dw, change_points, window_size)))
-print("RWiLS: DeepWalk (MDL) AUC={}".format(evaluate(smdl_dw, change_points, window_size)))
-print("RW (KL) AUC={}".format(evaluate(kl_org, change_points, window_size)))
-print("RW (MDL) AUC={}".format(evaluate(smdl_org, change_points, window_size)))
+print("RWiLS: GAE (KL) AUC={}".format(evaluate(kl_gae, change_points, window_size // 2)))
+print("RWiLS: GAE (MDL) AUC={}".format(evaluate(smdl_gae, change_points, window_size // 2)))
+print("RWiLS: DeepWalk (KL) AUC={}".format(evaluate(kl_dw, change_points, window_size // 2)))
+print("RWiLS: DeepWalk (MDL) AUC={}".format(evaluate(smdl_dw, change_points, window_size // 2)))
+print("RW (KL) AUC={}".format(evaluate(kl_org, change_points, window_size // 2)))
+print("RW (MDL) AUC={}".format(evaluate(smdl_org, change_points, window_size // 2)))
