@@ -196,7 +196,7 @@ def auc_benefit_far(scores, change_points, tolerate=3, threshold_step=0.0001):
 
 
 def SNML(adj, tran):
-        return np.where(np.logical_and(tran > 0, tran < 1), -np.log(adj * tran + (1 - adj) * (1 - tran)), 0)
+        return np.sum(np.where(np.logical_and(tran > 0, tran < 1), -np.log(adj * tran + (1 - adj) * (1 - tran)), 0))
 
 
 def SNML_ground_truth(v_node, p_mat):
