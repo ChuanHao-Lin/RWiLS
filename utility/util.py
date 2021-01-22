@@ -6,6 +6,7 @@ from scipy.sparse.linalg import eigs
 from sklearn.metrics import auc
 from random import random
 import sys
+from dirichlet import dirichlet
 
 ### NOTE: Difference between loggamma() and gammaln() ###
 #   loggamma(negative) = Nan
@@ -94,10 +95,14 @@ def jeffreys_dirichlet(alpha, beta):
           - (digamma(alpha_0) - digamma(beta_0)) * sum(diff)
 
 
-# Normalized term ignored
 def nml_code_length(alpha, window_size):
-    alpha_0 = sum(alpha)
-    return window_size * (sum(loggamma(alpha)) - loggamma(alpha_0) - sum((alpha - 1) * (digamma(alpha) - digamma(alpha_0))))
+    try:
+        alpha_0 = sum(alpha)
+        dim = len(alpha)
+    except:
+        alpha_0 = alpha
+        dim = 1
+    return window_size * (sum(loggamma(alpha)) - loggamma(alpha_0) - sum((alpha - 1) * (digamma(alpha) - digamma(alpha_0)))) + log_nml_c_dirichlet(dim, window_size)
 
 
 def embedding_random_walk(emb, active, pairwise_transition):
@@ -123,7 +128,7 @@ def normalize_score(scores):
 
 
 def MDL_threshold(window_size, dim, significant=0.05):
-    return 1 / significant + dim / 2 * np.log(window_size)
+    return dim / 2 * np.log(window_size) - np.log(significant)
 
 
 # Evaluation method. Implemented according to SMDL paper
@@ -205,16 +210,7 @@ def SNML_ground_truth(v_node, p_mat):
     code = -p_mat * np.log(p_mat) - (1 - p_mat) * np.log(1 - p_mat)
     node_combination = np.dot(np.reshape(v_node, (-1, 1)), np.reshape(v_node, (1,-1))) - np.diag(v_node)
     return 0.5 * np.sum(code * node_combination)
-
-
-def trigamma(x):
-    return polygamma(1, x)
     
-
-def fisher(alpha):
-    alpha_0 = sum(alpha)
-    return trigamma(alpha_0) * np.prod(trigamma(alpha)) * (1 / trigamma(alpha_0) + sum(1 / trigamma(alpha)))
-
 
 def MC_integrate(func, n_range, trials):
     s = 0
@@ -230,12 +226,29 @@ def MC_integrate(func, n_range, trials):
     return s
 
 
+def trigamma(x):
+    return polygamma(1, x)
 
-def root_I_integration(N, trials=1000):
-    a = err
-    b = sys.maxsize ** (1 / N)
 
-    return MC_integrate(lambda alpha: np.sqrt(fisher(alpha)), [[a, b]] * N, trials)
+def log_fisher(alpha):
+    alpha_0 = np.sum(alpha)
+    return np.log(trigamma(alpha_0)) + np.sum(np.log(trigamma(alpha))) + np.log((1 / trigamma(alpha_0) + sum(1 / trigamma(alpha))))
+
+
+# The method uses geometry mean instead of arithmetic mean as Monte Carlo integral does (as above)
+# This is to avoid numerical hazards
+def log_root_I_integration(N, trials=1000):
+    a = 0
+    b = sys.maxsize
+
+    s = 0
+    for _ in range(trials):
+        # sample uniformly from [a, b]
+        s += log_fisher([(b - a) * random() + a for _ in range(N)])
+    s /= trials
+    s += np.log(b - a) * N
+
+    return s / 2
 
 
 # Dynamic Programming
@@ -244,6 +257,31 @@ def log_nml_c_dirichlet(dim, window_size):
     if dim not in log_c:
         log_c[dim] = dict()
     if window_size not in log_c[dim]:
-        log_c[dim][window_size] = dim / 2 * np.log(window_size / 2 / np.pi) + np.log(root_I_integration(dim))
+        log_c[dim][window_size] = dim / 2 * np.log(window_size / 2 / np.pi) + np.log(log_root_I_integration(dim))
     
     return log_c[dim][window_size]
+
+
+def dirichlet_estimation_all(window, estimate_method="fixedpoint"):
+    return dirichlet.mle(window, method=estimate_method)
+
+
+def dirichlet_estimation_half(window, estimate_method="fixedpoint"):
+    window_size = len(window)
+
+    before = dirichlet.mle(window[:window_size//2], method=estimate_method)
+    after = dirichlet.mle(window[window_size//2:], method=estimate_method)
+    return before, after
+
+
+def kl_score(window, estimate_method="fixedpoint"):
+    before, after = dirichlet_estimation_half(window, estimate_method)
+    return kl_dirichlet(after, before)
+
+
+def smdl_score(window, estimate_method="fixedpoint"):
+    window_size = len(window)
+
+    before, after = dirichlet_estimation_half(window, estimate_method)
+    alpha = dirichlet_estimation_all(window, estimate_method)
+    return nml_code_length(alpha, window_size) - nml_code_length(before, window_size//2) - nml_code_length(after, window_size - window_size//2)

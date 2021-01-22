@@ -52,9 +52,7 @@ class scaw(object):
     def best_cut(self, window, order=0):
         max_score = 0
         max_cut = 0
-        for i in range(3, len(window) - 2):
-#        for i in range(2, len(window) - 1):
-#        for i in range(1, len(window)):
+        for i in range(1, len(window)):
             score = self.DMDL(window, i, order)
             if score > max_score: # the error (NaN) will be automatically covered by 0 (default)
                 max_score = score
@@ -151,8 +149,10 @@ class scaw2(scaw):
 
 
 class scaw_dirichlet(scaw):
-    def __init__(self, estimate_method="meanprecision"):
+    def __init__(self, estimate_method="meanprecision", limit=5):
         self.estimate_method = estimate_method # meanprecision fixedpoint
+        # refrain estimation with less than 5 data
+        self.limit = limit
 
     def log_nml_c(self, dim, window_size):
         return log_nml_c_dirichlet(dim, window_size)
@@ -162,6 +162,9 @@ class scaw_dirichlet(scaw):
         return window_size * (sum(loggamma(alpha)) - loggamma(alpha_0) - sum((alpha - 1) * (digamma(alpha) - digamma(alpha_0)))) + self.log_nml_c(dimension, window_size)
 
     def change_score(self, window, h):
+        if h < self.limit or len(window) - h < self.limit:
+            return err_state
+        
         window = np.array(window)
         window_size, dim = window.shape
 
@@ -176,8 +179,9 @@ class scaw_dirichlet(scaw):
 
 
 class scaw_gaussian(scaw):
-    def __init__(self):
-        pass
+    def __init__(self, limit=2):
+        # refrain estimation with less than 2 data
+        self.limit = limit
 
     def log_nml_c(self, k):
         return k / 2 * (np.log(k / 2) - 1) - loggamma((k - 1) / 2)
@@ -193,6 +197,9 @@ class scaw_gaussian(scaw):
         return np.sqrt(np.linalg.norm(np.linalg.det(np.cov(M.T))))
 
     def change_score(self, window, h):
+        if h < self.limit or len(window) - h < self.limit:
+            return err_state
+
         window_size = len(window)
         window = np.array(window)
         
@@ -210,24 +217,24 @@ class scaw_gaussian(scaw):
 
 
 class scaw1_dirichlet(scaw1, scaw_dirichlet):
-    def __init__(self, err_probs=[0.05, 0.05, 0.05], cut=True, estimate_method="meanprecision", counter=None):
+    def __init__(self, err_probs=[0.05, 0.05, 0.05], cut=True, estimate_method="meanprecision", limit=5, counter=None):
         scaw1.__init__(self, err_probs, cut, counter)
-        scaw_dirichlet.__init__(self, estimate_method)
+        scaw_dirichlet.__init__(self, estimate_method, limit)
 
 
 class scaw2_dirichlet(scaw2, scaw_dirichlet):
-    def __init__(self, max_bucket_size, err_probs=[0.05, 0.05, 0.05], cut=True, estimate_method="meanprecision", counter=None):
+    def __init__(self, max_bucket_size, err_probs=[0.05, 0.05, 0.05], cut=True, estimate_method="meanprecision", limit=5, counter=None):
         scaw2.__init__(self, max_bucket_size, err_probs, cut, counter)
-        scaw_dirichlet.__init__(self, estimate_method)
+        scaw_dirichlet.__init__(self, estimate_method, limit)
 
 
 class scaw1_gaussian(scaw1, scaw_gaussian):
-    def __init__(self, err_probs=[0.05, 0.05, 0.05], cut=True, counter=None):
+    def __init__(self, err_probs=[0.05, 0.05, 0.05], cut=True, limit=2, counter=None):
         scaw1.__init__(self, err_probs, cut, counter)
-        scaw_gaussian.__init__(self)
+        scaw_gaussian.__init__(self, limit)
 
 
 class scaw2_gaussian(scaw2, scaw_gaussian):
-    def __init__(self, max_bucket_size, err_probs=[0.05, 0.05, 0.05], cut=True, counter=None):
+    def __init__(self, max_bucket_size, err_probs=[0.05, 0.05, 0.05], cut=True, limit=2, counter=None):
         scaw2.__init__(self, max_bucket_size, err_probs, cut, counter)
-        scaw_gaussian.__init__(self)
+        scaw_gaussian.__init__(self, limit)

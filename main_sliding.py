@@ -8,7 +8,7 @@ from time import time
 from utility.aggregation import *
 from utility.util import *
 from utility.random_graph import *
-from utility.sliding import *
+from utility.sliding import sliding_window
 # dirichlet
 from dirichlet import dirichlet
 
@@ -34,7 +34,7 @@ activate = ReLu
 
 ########## RANDOM GRAPH PARAMETERS ##########
 
-num_nodes = 1000
+num_nodes = 100
 block_size = 5
 degree = 10.
 
@@ -209,28 +209,35 @@ dw_model = DeepWalk(dimension=dim)
 
 ########## WINDOWS ##########
 
-def gae_rwils(g):
-    return embedding_random_walk(gae_model.embed(g), activate, pairwise_transition)
-
-def dw_rwils(g):
-    return embedding_random_walk(dw_model.embed(g), activate, pairwise_transition)
+def rwils(emb):
+    return embedding_random_walk(emb, activate, pairwise_transition)
 
 def rw(g):
     return random_walk(nx.adjacency_matrix(g))
 
-window_gae = sliding_window(window_size, gae_rwils, estimate_method)
-window_dw = sliding_window(window_size, dw_rwils, estimate_method)
-window_org = sliding_window(window_size, rw, estimate_method)
+window_gae = sliding_window(window_size)
+window_dw = sliding_window(window_size)
+window_org = sliding_window(window_size, [kl_score, smdl_score])
+
+def gae_aggregate(g):
+    emb_gae = gae_model.embed(g)
+    window_gae.insert_new_data(rwils(emb_gae))
+    return window_gae.get_window()
+
+def dw_aggregate(g):
+    emb_dw = dw_model.embed(g)
+    window_dw.insert_new_data(rwils(emb_dw))
+    return window_dw.get_window()
 
 
 ########## AGGREGATE MODEL ##########
 
 agg_model = aggregate_model_evaluation(a, b, individual=True)
 
-agg_model.add_model(window_gae.insert_window)   # GAE:      1st idx=0
-agg_model.add_model(window_dw.insert_window)    # DeepWalk: 1st idx=1
-agg_model.add_evaluation(kl_score)              # KL:       2nd idx=0
-agg_model.add_evaluation(smdl_score)            # SMDL:     2nd idx=1
+agg_model.add_model(gae_aggregate)      # GAE:      1st idx=0
+agg_model.add_model(dw_aggregate)       # DeepWalk: 1st idx=1
+agg_model.add_evaluation(kl_score)      # KL:       2nd idx=0
+agg_model.add_evaluation(smdl_score)    # SMDL:     2nd idx=1
 
 
 ########## TRAIN GRAPH MODELS ##########
@@ -249,9 +256,13 @@ while not ready:
     g = graph_model.generate()
     adj = nx.adjacency_matrix(g)
 
-    ready_gae = not window_gae.fill(g)
-    ready_dw = not window_dw.fill(g)
-    ready_org = not window_org.fill(g)
+    vec_gae = rwils(gae_model.embed(g))
+    vec_dw = rwils(dw_model.embed(g))
+    vec_org = rw(g)
+
+    ready_gae = not window_gae.fill(vec_gae)
+    ready_dw = not window_dw.fill(vec_dw)
+    ready_org = not window_org.fill(vec_org)
     ready = ready_gae and ready_dw and ready_org
     i += 1
 
@@ -278,12 +289,12 @@ for parameter, period in zip(parameters, periods):
         g = graph_model.generate()
         adj = nx.adjacency_matrix(g)
 
-        ### Original ###                
-        window_org.insert_new_data(g)
-        window_org.calculate_scores()
-
         ### Aggregate ###
         agg_model.insert_new_data(g)
+
+        ### Original ###
+        vec_org = rw(g)
+        window_org.insert_new_data(vec_org)
 
         graph_model.info()
         print("{} / {}".format(t, period))
@@ -299,9 +310,8 @@ smdl_gae = individual_scores[0][1]
 kl_dw = individual_scores[1][0]
 smdl_dw = individual_scores[1][1]
 
-kl_org, smdl_org = window_org.get_scores()
-
 aggs = normalize_score(aggs)
+kl_org, smdl_org = window_org.get_scores()
 
 kl_gae = normalize_score(kl_gae)
 kl_dw = normalize_score(kl_dw)
@@ -314,7 +324,7 @@ smdl_org = normalize_score(smdl_org)
 
 ########## RESULTS ##########
 
-print("RWiLS (AGG) AUC={}".format(evaluate(aggs, change_points, window_size)))
+print("RWiLS (AGG) AUC={}".format(evaluate(aggs, change_points, window_size // 2)))
 print("RWiLS: GAE (KL) AUC={}".format(evaluate(kl_gae, change_points, window_size // 2)))
 print("RWiLS: GAE (MDL) AUC={}".format(evaluate(smdl_gae, change_points, window_size // 2)))
 print("RWiLS: DeepWalk (KL) AUC={}".format(evaluate(kl_dw, change_points, window_size // 2)))
