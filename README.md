@@ -9,7 +9,7 @@ Two approaches are included in the projects to detect the variation of the netwo
 1.   The first one fixes the amount of data under consideration, and two methods are used to measure the difference between two probability distributions, which are KL-divergence and MDL-change statistics respectively. The latter method is provided in the following paper: \
 *Kenji Yamanishi and Kohei Miyaguchi, "Detecting gradual changes from data stream using MDL-change statistics," 2016 IEEE International Conference on Big Data (Big Data), Washington, DC, 2016, pp. 156-163*. \
 \
-Furhter, a method to aggregate the following methods is provided in 
+Furhter, a method to aggregate the following methods is provided in:\ 
 *Y. Yonamoto, K. Morino and K. Yamanishi, "Temporal Network Change Detection Using Network Centralities," 2016 IEEE International Conference on Data Science and Advanced Analytics (DSAA), Montreal, QC, 2016, pp. 51-60*.
 
 2.   The second one adjusts the considered data automatically. The method is provided in the following paper: \
