@@ -24,8 +24,8 @@ dim = 32
 
 epoch = 200
 
-a = 100 # aggregation lower bound
-b = 1000 # aggregation upper bound
+a = 1000 # aggregation lower bound
+b = 6000 # aggregation upper bound
 
 pairwise_transition = inner_transition # distance_transition inner_transition
 estimate_method = "fixedpoint" # meanprecision fixedpoint
