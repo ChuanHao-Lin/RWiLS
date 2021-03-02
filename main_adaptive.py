@@ -239,10 +239,11 @@ for parameter, period in zip(parameters, periods):
         ### SCAW ###
         vec_gae = embedding_random_walk(emb_gae, activate, pairwise_transition)
         vec_dw = embedding_random_walk(emb_dw, activate, pairwise_transition)
-        vec_org = random_walk(adj)
-
         slot_gae.insert_new_data(vec_gae)
         slot_dw.insert_new_data(vec_dw)
+
+        ### Original ###
+        vec_org = random_walk(adj)
         slot_org.insert_new_data(vec_org)
 
         graph_model.info()
