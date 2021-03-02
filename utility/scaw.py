@@ -94,7 +94,7 @@ class scaw1(scaw):
             self.scores[i].append(score)
             if score > self.threshold(len(self.window), len(data), i):
                 self.change_points[i].append(t)
-        # Seperate 0 with 1, 2
+        # Seperate 0-th order with 1, 2
         score, max_cut = self.best_cut(self.window)
         self.scores[0].append(score)
 

@@ -21,7 +21,7 @@ class sliding_window(object):
                 return False
 
             return True
-        # already numpy (full)
+        # already numpy (window is full)
         except:
             self.insert_new_data(data)
             return False
