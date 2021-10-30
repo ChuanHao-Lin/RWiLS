@@ -1,4 +1,4 @@
-### This file is meant to be a wrapper, which allows users to use GAE without explictly calling tensorflow
+### This file is a wrapper, which allows users to use GAE without explict tensorflow usage
 ### Most of the contents are modified from train.py
 
 from __future__ import division
