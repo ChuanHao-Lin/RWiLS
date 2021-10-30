@@ -1,5 +1,3 @@
-# coding: utf-8
-
 import numpy as np
 import networkx as nx
 from gensim.models import Word2Vec
